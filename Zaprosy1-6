@@ -1,0 +1,56 @@
+1.  select Customer.CustomerId, Customer.FirstName, Customer.Phone, Customer.Company
+    from Customer
+join Invoice on Invoice.CustomerId = Customer.CustomerId
+join InvoiceLine on Invoice.InvoiceId = InvoiceLine.InvoiceId
+join Track on InvoiceLine.TrackId = Track.TrackId
+join Genre on Track.GenreId = Genre.GenreId
+join Employee on Customer.SupportRepId = Employee.EmployeeId
+where
+strftime('%Y-%m-%d', Employee.BirthDate) <= strftime('%Y-%m-%d', '1969-05-19')
+AND
+Genre.Name != 'Rock'
+group by Customer.FirstName having count(*) > 1
+order by Customer.City asc, Customer.Email desc
+limit 10
+2.  select s.LastName || ' ' || s.FirstName as WorkerName, s.Phone,
+    r.LastName || ' ' || r.FirstName as HeadName, r.Phone
+from Employee as r
+left join Employee as s on r.EmployeeId = s.ReportsTo
+where s.ReportsTo is not null
+3.  select Customer.FirstName, Customer.Phone
+    from Customer
+join Invoice on Invoice.CustomerId = Customer.CustomerId
+join InvoiceLine as I on Invoice.InvoiceId = I.InvoiceId
+join (select UnitPrice, InvoiceLineId
+from InvoiceLine
+order by UnitPrice desc
+limit 1) as MaxPrice
+on I.UnitPrice = MaxPrice.UnitPrice
+group by Customer.FirstName having count(*) > 1
+order by Customer.FirstName asc
+4.  SELECT C.FirstName, C.LastName, C.Phone, C.City FROM Customer C JOIN (
+    SELECT C1.City, C1.CustomerId FROM Customer C1
+    inner join Invoice
+    on C1.CustomerId = Invoice.CustomerId
+    group by C1.City
+    having count(distinct C1.CustomerId) > 1
+) TMP1 ON TMP1.City = C.City
+inner join Invoice X on C.CustomerId =X.CustomerId
+group by C.CustomerId;
+5.  select c.City, round(sum(i.Total),2) as t from Customer c inner join Invoice I on c.CustomerId = I.CustomerId
+group by c.City
+order by t DESC
+limit 3;
+6. select t.name as GenreName,
+       T1.name as Track,
+       A.title as Album,
+       A2.Name as Artist
+FROM (select G.GenreId, G.name
+    from InvoiceLine IL
+    JOIN Track T ON T.trackId = IL.trackId
+    Join Genre G ON G.GenreId = T.GenreId
+    group by G.GenreId
+    order by sum(quantity) DESC limit 1) t
+Join Track T1 ON T1.GenreId  = t.GenreId
+LEFT JOIN Album A ON A.AlbumId = T1.AlbumId
+LEFT JOIN Artist A2 ON A2.ArtistId = A.artistId;
